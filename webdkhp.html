@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Đăng ký học phần</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Scrollbar styling for nice table scroll */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #2563eb;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #1e40af;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+
+  <!-- Navbar -->
+  <nav class="bg-blue-900 text-white px-6 py-4 flex justify-between items-center">
+    <h1 class="text-xl font-semibold">Hệ thống đăng ký học phần</h1>
+    <div id="auth-section" class="flex items-center space-x-4">
+      <!-- Will be updated dynamically -->
+    </div>
+  </nav>
+
+  <main class="flex-grow container mx-auto px-4 py-8 max-w-7xl">
+
+    <!-- Login Form -->
+    <section id="login-section" class="max-w-md mx-auto mt-24 p-8 bg-white rounded shadow-md">
+      <h2 class="text-2xl font-bold mb-6 text-center text-blue-900">Đăng nhập</h2>
+      <form id="login-form" class="space-y-4">
+        <div>
+          <label for="username" class="block font-medium mb-1">Tên đăng nhập</label>
+          <input id="username" name="username" type="text" required autocomplete="username"
+                 class="w-full rounded border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600" />
+        </div>
+        <div>
+          <label for="password" class="block font-medium mb-1">Mật khẩu</label>
+          <input id="password" name="password" type="password" required autocomplete="current-password"
+                 class="w-full rounded border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600" />
+        </div>
+        <button type="submit" class="w-full bg-blue-900 text-white py-2 rounded hover:bg-blue-700 transition">Đăng nhập</button>
+      </form>
+      <p id="login-error" class="text-red-600 mt-3 text-center hidden">Sai tên đăng nhập hoặc mật khẩu</p>
+    </section>
+
+    <!-- Main Content logged in -->
+    <section id="app-section" class="hidden">
+
+      <!-- User info + Logout -->
+      <div class="flex justify-between items-center mb-6">
+        <div class="text-lg font-semibold text-blue-900">Xin chào, <span id="user-name"></span></div>
+        <button id="logout-btn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">Đăng xuất</button>
+      </div>
+
+      <!-- Tab Navigation -->
+      <div class="mb-6">
+        <nav class="flex space-x-4 border-b border-gray-300">
+          <button data-tab="register" class="tab-btn border-b-4 border-blue-900 pb-2 font-semibold text-blue-900">Đăng ký học phần</button>
+          <button data-tab="courses" class="tab-btn border-b-4 border-transparent pb-2 font-semibold text-gray-600 hover:text-blue-900 hover:border-blue-900">Danh sách học phần</button>
+        </nav>
+      </div>
+
+      <!-- Tabs content -->
+      <div id="tab-content">
+
+        <!-- Register Course Table -->
+        <section id="register" class="tab-panel">
+          <h2 class="text-xl font-bold mb-4 text-blue-900">COMP1712 - Học máy</h2>
+          <div class="overflow-x-auto rounded-lg shadow">
+            <table class="min-w-full text-left">
+              <thead class="bg-blue-900 text-white rounded-t-lg">
+                <tr>
+                  <th class="px-3 py-2 border border-blue-800" style="width: 3rem;">STT</th>
+                  <th class="px-3 py-2 border border-blue-800" style="width: 4rem;">Chọn</th>
+                  <th class="px-3 py-2 border border-blue-800" style="width: 8rem;">Loại</th>
+                  <th class="px-3 py-2 border border-blue-800" style="min-width: 10rem;">Mã LHP</th>
+                  <th class="px-3 py-2 border border-blue-800" style="width: 7rem;">SL tối đa</th>
+                  <th class="px-3 py-2 border border-blue-800" style="width: 7rem;">SL đăng ký</th>
+                  <th class="px-3 py-2 border border-blue-800" style="width: 7rem;">SL còn lại</th>
+                  <th class="px-3 py-2 border border-blue-800" style="min-width: 10rem;">GV</th>
+                  <th class="px-3 py-2 border border-blue-800" style="min-width: 14rem;">Lịch học</th>
+                  <th class="px-3 py-2 border border-blue-800" style="width: 7rem;">Số tiền</th>
+                  <th class="px-3 py-2 border border-blue-800" style="min-width: 10rem;">Ghi chú</th>
+                </tr>
+              </thead>
+              <tbody id="register-table-body" class="bg-white">
+                <!-- Rows will be injected dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Course List Table -->
+        <section id="courses" class="tab-panel hidden">
+          <div class="overflow-x-auto rounded-lg shadow">
+            <table class="min-w-full border border-gray-300 text-left text-sm">
+              <thead>
+                <tr class="bg-blue-900 text-white">
+                  <th class="px-3 py-2 border border-blue-800 w-12">STT</th>
+                  <th class="px-3 py-2 border border-blue-800 min-w-[8rem]">Mã học phần</th>
+                  <th class="px-3 py-2 border border-blue-800 min-w-[14rem]">Tên học phần</th>
+                  <th class="px-3 py-2 border border-blue-800 w-12 text-center">STC</th>
+                  <th class="px-3 py-2 border border-blue-800 w-20 text-center">Số lượng LHP</th>
+                  <th class="px-3 py-2 border border-blue-800 w-28 text-center">Thao tác</th>
+                   <th class="px-3 py-2 border border-blue-800 w-20 text-center">Đã đăng ký</th>
+                  <th class="px-3 py-2 border border-blue-800 w-20 text-center">Còn lại</th>
+                </tr>
+              </thead>
+              <tbody id="courses-table" class="bg-white divide-y divide-gray-200">
+                <!-- Course groups and rows injected dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      // Simulated user database (username, password, role)
+      const users = [
+        { username: "student1", password: "1234", role: "student", name: "Nguyễn Văn A" },
+        { username: "teacher1", password: "abcd", role: "teacher", name: "Giáo viên B" },
+        { username: "admin", password: "admin1234", role: "admin", name: "Quản trị viên" },
+      ];
+
+      // Example data for register table (the first screenshot style)
+      let registerCourses = [
+        {
+          stt: 1, type: "Lý thuyết", code: "2511COMP171201", max: "", registered: 21, left: 24,
+          teacher: "Ngô Quốc Việt",
+          schedule: "Thứ Tư, Tiết(1 - 3), B.318, ADV (10/09/2025 -> 17/12/2025)",
+          fee: "",
+          note: ""
+        },
+        {
+          stt: 2, type: "Lý thuyết", code: "2511COMP171202", max: "", registered: 43, left: 2,
+          teacher: "Ngô Quốc Việt",
+          schedule: "Thứ Tư, Tiết(4 - 6), B.318, ADV (10/09/2025 -> 17/12/2025)",
+          fee: "",
+          note: ""
+        }
+      ];
+
+      // Example data for courses table (the second screenshot style)
+      const courseGroups = [
+        {
+          title: "Học phần chuyên môn chung lĩnh vực và riêng cho ngành_Tự chọn",
+          courses: [
+            {stt: 1, code: "COMP1712", name: "Học máy", stc: 3, lhps: 2},
+            {stt: 2, code: "COMP1304", name: "Phát triển ứng dụng trên thiết bị di động", stc: 3, lhps: 2},
+            {stt: 3, code: "COMP1305", name: "Quản lý dự án Công nghệ Thông tin", stc: 3, lhps: 1},
+            {stt: 4, code: "COMP1050", name: "Xử lý ảnh số", stc: 3, lhps: 2},
+          ]
+        },
+        {
+          title: "Học phần nghiệp vụ cho nhóm ngành Công nghệ thông tin_Tự chọn",
+          courses: [
+            {stt: 1, code: "COMP1041", name: "Cơ sở dữ liệu nâng cao", stc: 3, lhps: 2},
+            {stt: 2, code: "COMP1804", name: "Lập trình Python", stc: 3, lhps: 1},
+          ]
+        }
+      ];
+
+      // HTML references
+      const loginSection = document.getElementById('login-section');
+      const loginForm = document.getElementById('login-form');
+      const loginError = document.getElementById('login-error');
+      const appSection = document.getElementById('app-section');
+      const authSection = document.getElementById('auth-section');
+      const userNameDisplay = document.getElementById('user-name');
+      const logoutBtn = document.getElementById('logout-btn');
+      const registerTableBody = document.getElementById('register-table-body');
+      const coursesTableBody = document.getElementById('courses-table');
+      const tabButtons = [...document.querySelectorAll('.tab-btn')];
+      const tabPanels = [...document.querySelectorAll('.tab-panel')];
+
+      // Application state
+      let currentUser = null;
+
+      // Util: Save user session (simulated)
+      function saveSession(user) {
+        localStorage.setItem('authUser', JSON.stringify(user));
+      }
+      function loadSession() {
+        const stored = localStorage.getItem('authUser');
+        return stored ? JSON.parse(stored) : null;
+      }
+      function clearSession() {
+        localStorage.removeItem('authUser');
+      }
+
+      // Render the register courses table rows dynamically
+      function renderRegisterCourses() {
+        registerTableBody.innerHTML = '';
+        registerCourses.forEach(course => {
+          const tr = document.createElement('tr');
+          tr.className = 'even:bg-gray-50 odd:bg-white text-sm';
+          // STT
+          let td = document.createElement('td');
+          td.textContent = course.stt;
+          td.className = "border border-blue-800 px-2 text-center";
+          tr.appendChild(td);
+          // Chọn (radio button)
+          td = document.createElement('td');
+          td.className = "border border-blue-800 text-center";
+          let radio = document.createElement('input');
+          radio.type = 'radio';
+          radio.name = 'select-course';
+          radio.value = course.code;
+          td.appendChild(radio);
+          tr.appendChild(td);
+          // Loại
+          td = document.createElement('td');
+          td.textContent = course.type;
+          td.className = "border border-blue-800 px-2";
+          tr.appendChild(td);
+          // Mã LHP
+          td = document.createElement('td');
+          td.textContent = course.code;
+          td.className = "border border-blue-800 px-2";
+          tr.appendChild(td);
+          // SL tối đa
+          td = document.createElement('td');
+          td.textContent = course.max ?? '';
+          td.className = "border border-blue-800 px-2 text-center";
+          tr.appendChild(td);
+          // SL đăng ký
+          td = document.createElement('td');
+          td.textContent = course.registered ?? '';
+          td.className = "border border-blue-800 px-2 text-center";
+          tr.appendChild(td);
+          // SL còn lại
+          td = document.createElement('td');
+          td.textContent = course.left ?? '';
+          td.className = "border border-blue-800 px-2 text-center";
+          tr.appendChild(td);
+          // GV
+          td = document.createElement('td');
+          td.textContent = course.teacher ?? '';
+          td.className = "border border-blue-800 px-2";
+          tr.appendChild(td);
+          // Lịch học
+          td = document.createElement('td');
+          td.textContent = course.schedule ?? '';
+          td.className = "border border-blue-800 px-2";
+          tr.appendChild(td);
+          // Số tiền
+          td = document.createElement('td');
+          td.textContent = course.fee ?? '';
+          td.className = "border border-blue-800 px-2 text-center";
+          tr.appendChild(td);
+          // Ghi chú
+          td = document.createElement('td');
+          td.textContent = course.note ?? '';
+          td.className = "border border-blue-800 px-2";
+          tr.appendChild(td);
+
+          registerTableBody.appendChild(tr);
+        });
+      }
+
+      // Render courses grouped by their category with register buttons
+      function renderCourses() {
+        coursesTableBody.innerHTML = '';
+
+        // Header: Tự chọn row spanning all columns
+        const trSelfChoice = document.createElement('tr');
+        trSelfChoice.className = 'bg-sky-400 text-left font-semibold text-blue-900';
+        const tdSelfChoice = document.createElement('td');
+        tdSelfChoice.textContent = 'Tự chọn';
+        tdSelfChoice.colSpan = 6;
+        tdSelfChoice.className = 'px-3 py-1';
+        trSelfChoice.appendChild(tdSelfChoice);
+        coursesTableBody.appendChild(trSelfChoice);
+
+        courseGroups.forEach(group => {
+          // Group title row with background pink
+          const trGroupTitle = document.createElement('tr');
+          trGroupTitle.className = 'bg-pink-200 font-semibold text-gray-700';
+          const tdGroup = document.createElement('td');
+          tdGroup.textContent = group.title;
+          tdGroup.colSpan = 6;
+          tdGroup.className = 'px-3 py-1';
+          trGroupTitle.appendChild(tdGroup);
+          coursesTableBody.appendChild(trGroupTitle);
+
+          // Courses rows
+          group.courses.forEach(course => {
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-gray-100';
+
+            // STT
+            let td = document.createElement('td');
+            td.className = "border border-gray-200 px-3 py-1 text-center";
+            td.textContent = course.stt;
+            tr.appendChild(td);
+
+            // Mã học phần
+            td = document.createElement('td');
+            td.className = "border border-gray-200 px-3 py-1";
+            td.textContent = course.code;
+            tr.appendChild(td);
+
+            // Tên học phần
+            td = document.createElement('td');
+            td.className = "border border-gray-200 px-3 py-1";
+            td.textContent = course.name;
+            tr.appendChild(td);
+
+            // STC
+            td = document.createElement('td');
+            td.className = "border border-gray-200 px-3 py-1 text-center";
+            td.textContent = course.stc;
+            tr.appendChild(td);
+
+            // Số lượng LHP
+            td = document.createElement('td');
+            td.className = "border border-gray-200 px-3 py-1 text-center";
+            td.textContent = course.lhps;
+            tr.appendChild(td);
+
+            // Thao tác
+            td = document.createElement('td');
+            td.className = "border border-gray-200 px-3 py-1 text-center";
+
+            const btn = document.createElement('button');
+            btn.className = 'text-white bg-green-700 hover:bg-green-800 px-3 py-[0.35rem] rounded flex items-center gap-1 mx-auto text-sm transition';
+            btn.title = "Đăng ký học phần";
+            btn.type = "button";
+
+            btn.innerHTML = `
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5h2m-1 0v14m-7-7h14"/></svg>
+              Đăng ký
+            `;
+            btn.addEventListener('click', () => {
+              alert(`Bạn đã đăng ký học phần: ${course.code} - ${course.name}`);
+;
+            });
+
+            td.appendChild(btn);
+            tr.appendChild(td);
+
+            coursesTableBody.appendChild(tr);
+          });
+        });
+      }
+
+      // Switch between tabs
+      function switchTab(tabName) {
+        tabButtons.forEach(btn => {
+          if (btn.dataset.tab === tabName) {
+            btn.classList.add('border-blue-900', 'text-blue-900');
+            btn.classList.remove('border-transparent', 'text-gray-600');
+          } else {
+            btn.classList.remove('border-blue-900', 'text-blue-900');
+            btn.classList.add('border-transparent', 'text-gray-600');
+          }
+        });
+        tabPanels.forEach(panel => {
+          if (panel.id === tabName) {
+            panel.classList.remove('hidden');
+          } else {
+            panel.classList.add('hidden');
+          }
+        });
+      }
+
+      // Role based content control (only simple example here)
+      function applyRoleBasedAccess(role) {
+        // For demonstration: students can see both tabs, teachers only courses, admin all
+        switch(role) {
+          case 'student':
+            document.querySelector('[data-tab="register"]').style.display = '';
+            document.querySelector('[data-tab="courses"]').style.display = '';
+            switchTab('register');
+            break;
+          case 'teacher':
+            document.querySelector('[data-tab="register"]').style.display = 'none';
+            document.querySelector('[data-tab="courses"]').style.display = '';
+            switchTab('courses');
+            break;
+          case 'admin':
+            document.querySelector('[data-tab="register"]').style.display = '';
+            document.querySelector('[data-tab="courses"]').style.display = '';
+            switchTab('register');
+            break;
+          default:
+            document.querySelector('[data-tab="register"]').style.display = '';
+            document.querySelector('[data-tab="courses"]').style.display = '';
+            switchTab('register');
+            break;
+        }
+      }
+
+      // LOGIN HANDLER
+      loginForm.addEventListener('submit', e => {
+        e.preventDefault();
+        const username = loginForm.username.value.trim();
+        const password = loginForm.password.value;
+
+        loginError.classList.add('hidden');
+
+        const user = users.find(u => u.username === username && u.password === password);
+        if (!user) {
+          loginError.classList.remove('hidden');
+          return;
+        }
+        currentUser = user;
+        saveSession(user);
+        afterLogin();
+      });
+
+      // LOGOUT
+      logoutBtn.addEventListener('click', () => {
+        currentUser = null;
+        clearSession();
+        afterLogout();
+      });
+
+      // After login - show app, hide login, set user info and render content
+      function afterLogin() {
+        loginSection.classList.add('hidden');
+        appSection.classList.remove('hidden');
+
+        userNameDisplay.textContent = currentUser.name;
+
+        applyRoleBasedAccess(currentUser.role);
+
+        renderRegisterCourses();
+        renderCourses();
+      }
+
+      // After logout - show login, hide app
+      function afterLogout() {
+        loginSection.classList.remove('hidden');
+        appSection.classList.add('hidden');
+
+        loginForm.username.value = '';
+        loginForm.password.value = '';
+      }
+
+      // On load - check for session
+      window.addEventListener('DOMContentLoaded', () => {
+        const saved = loadSession();
+        if (saved) {
+          currentUser = saved;
+          afterLogin();
+        } else {
+          afterLogout();
+        }
+      });
+
+      // Tab buttons event
+      tabButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (btn.dataset.tab) {
+            switchTab(btn.dataset.tab);
+          }
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
