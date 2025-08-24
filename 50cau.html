@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bài Trắc Nghiệm Tiếng Anh (50 câu) - Có đăng nhập & lịch sử</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .question-card { transition: all 0.3s ease; }
+    .question-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(0,0,0,.1); }
+    .option-label { transition: all 0.2s ease; }
+    .option-label:hover { background-color: #f1f5f9; }
+    input[type="radio"]:checked + .option-label { background-color:#3b82f6; color:#fff; border-color:#3b82f6; }
+    .progress-bar { transition: width 0.3s ease; }
+    .hidden-important { display:none !important; }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+  <div class="container mx-auto px-4 py-8 max-w-5xl">
+    <!-- Header -->
+    <div class="text-center mb-6">
+      <h1 class="text-4xl font-bold text-blue-800 mb-2">Bài Trắc Nghiệm Tiếng Anh</h1>
+      <p class="text-gray-600">50 câu trắc nghiệm — có tính điểm, lịch sử làm bài (yêu cầu đăng nhập)</p>
+    </div>
+
+    <!-- Auth Card -->
+    <div id="auth-card" class="bg-white rounded-lg shadow-md p-6 mb-6">
+      <h2 class="text-2xl font-semibold text-gray-800 mb-4">Đăng nhập / Đăng ký</h2>
+      <div class="grid md:grid-cols-2 gap-6">
+        <!-- Login -->
+        <div class="border rounded-xl p-4">
+          <h3 class="font-semibold text-lg mb-3">Đăng nhập</h3>
+          <div class="space-y-3">
+            <input id="login-username" class="w-full border rounded-lg px-3 py-2" placeholder="Tên đăng nhập"/>
+            <input id="login-password" type="password" class="w-full border rounded-lg px-3 py-2" placeholder="Mật khẩu"/>
+            <button id="login-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg">Đăng nhập</button>
+            <p id="login-msg" class="text-sm text-red-600"></p>
+          </div>
+        </div>
+        <!-- Register -->
+        <div class="border rounded-xl p-4">
+          <h3 class="font-semibold text-lg mb-3">Đăng ký tài khoản mới</h3>
+          <div class="space-y-3">
+            <input id="reg-username" class="w-full border rounded-lg px-3 py-2" placeholder="Tên đăng nhập"/>
+            <input id="reg-password" type="password" class="w-full border rounded-lg px-3 py-2" placeholder="Mật khẩu"/>
+            <button id="register-btn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2 rounded-lg">Đăng ký</button>
+            <p id="register-msg" class="text-sm"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Bar: user + actions -->
+    <div id="top-actions" class="hidden bg-white rounded-lg shadow-md p-4 mb-6 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <span class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-blue-600 text-white font-semibold" id="avatar-badge">U</span>
+        <div>
+          <div class="text-sm text-gray-500">Đang đăng nhập</div>
+          <div id="current-username" class="font-semibold text-gray-800">username</div>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-3">
+        <button id="view-history-btn" type="button" class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-lg">Xem lịch sử</button>
+        <button id="logout-btn" type="button" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg">Đăng xuất</button>
+      </div>
+    </div>
+
+    <!-- Progress -->
+    <div id="progress-card" class="hidden bg-white rounded-lg shadow-md p-4 mb-6">
+      <div class="flex justify-between items-center mb-2">
+        <span class="text-sm font-medium text-gray-700">Tiến độ làm bài</span>
+        <span class="text-sm font-medium text-blue-600" id="progress-text">0/50</span>
+      </div>
+      <div class="w-full bg-gray-200 rounded-full h-2">
+        <div id="progress-bar" class="progress-bar bg-blue-600 h-2 rounded-full" style="width:0%"></div>
+      </div>
+    </div>
+
+    <!-- Quiz -->
+    <form id="quiz-form" class="hidden space-y-6">
+      <!-- Các khối sẽ render tự động để giữ giao diện đẹp & gọn -->
+      <div id="questions-container" class="space-y-6"></div>
+
+      <!-- Actions -->
+      <div class="bg-white rounded-lg shadow-md p-4 flex flex-wrap items-center justify-between gap-4">
+        <div class="text-gray-600 text-sm">Hãy kiểm tra lại đáp án trước khi nộp bài.</div>
+        <div class="flex gap-3">
+          <button id="submit-btn" type="button" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2 rounded-lg">Nộp bài</button>
+          <button id="reset-btn" type="button" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium px-5 py-2 rounded-lg">Làm lại</button>
+        </div>
+      </div>
+    </form>
+
+    <!-- Result -->
+    <div id="result-card" class="hidden bg-white rounded-lg shadow-md p-6 mt-6">
+      <h3 class="text-2xl font-semibold text-blue-800 mb-2">Kết quả</h3>
+      <p class="text-gray-700 mb-4" id="result-text"></p>
+      <div id="mistakes-wrap" class="hidden">
+        <h4 class="font-semibold text-gray-800 mb-2">Các câu sai:</h4>
+        <ul id="mistakes-list" class="list-disc pl-5 space-y-1 text-gray-700"></ul>
+      </div>
+    </div>
+
+    <!-- History -->
+    <div id="history-card" class="hidden bg-white rounded-lg shadow-md p-6 mt-6">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-2xl font-semibold text-gray-800">Lịch sử làm bài</h3>
+        <button id="close-history" class="text-sm px-3 py-1 rounded-lg border hover:bg-gray-50">Đóng</button>
+      </div>
+      <div id="history-empty" class="text-gray-600">Chưa có lần làm bài nào.</div>
+      <div id="history-table-wrap" class="hidden overflow-x-auto">
+        <table class="min-w-full border rounded-lg">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="text-left text-sm font-semibold text-gray-700 px-3 py-2 border-b">#</th>
+              <th class="text-left text-sm font-semibold text-gray-700 px-3 py-2 border-b">Thời gian</th>
+              <th class="text-left text-sm font-semibold text-gray-700 px-3 py-2 border-b">Điểm</th>
+              <th class="text-left text-sm font-semibold text-gray-700 px-3 py-2 border-b">Tỷ lệ đúng</th>
+            </tr>
+          </thead>
+          <tbody id="history-tbody" class="divide-y"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ====== DATA: 50 câu hỏi + đáp án theo đúng đề bạn đưa ======
+    const RAW_QUESTIONS = [
+      // 1–10
+      {q:"He is ______ the floor with a broom.", A:"sweeping", B:"wiping", C:"scrubbing", D:"brushing", correct:"A"},
+      {q:"Several people are waiting ______ in front of the ticket counter.", A:"beside", B:"in line", C:"across", D:"behind", correct:"B"},
+      {q:"The man is sitting on a wooden ______ in the park.", A:"cushion", B:"bench", C:"rack", D:"stool", correct:"B"},
+      {q:"A worker is carrying a ______ of metal to the construction site.", A:"sheet", B:"pile", C:"brick", D:"plank", correct:"A"},
+      {q:"A light fixture is hanging from the ______.", A:"wall", B:"frame", C:"ceiling", D:"flooring", correct:"C"},
+      {q:"She is pouring some liquid into a glass ______.", A:"vase", B:"jar", C:"pot", D:"bin", correct:"B"},
+      {q:"The woman is standing next to the kitchen ______.", A:"cupboard", B:"outlet", C:"drawer", D:"stairway", correct:"A"},
+      {q:"Some clothes are hanging on ______.", A:"hooks", B:"shelves", C:"hangers", D:"racks", correct:"C"},
+      {q:"Several suitcases are ______ on the luggage rack.", A:"discarded", B:"loaded", C:"packed", D:"stacked", correct:"D"},
+      {q:"A woman is ______ down to tie her shoe laces.", A:"leaning", B:"kneeling", C:"crouching", D:"laying", correct:"B"},
+      // 11–20
+      {q:"Some leaves are ______ on the ground.", A:"scattered", B:"spilled", C:"dropped", D:"swept", correct:"A"},
+      {q:"The man is ______ a boat under the bridge.", A:"rowing", B:"floating", C:"riding", D:"driving", correct:"A"},
+      {q:"A worker is climbing up a ______ to reach the roof.", A:"ladder", B:"pole", C:"railing", D:"stairway", correct:"A"},
+      {q:"The waiter is carrying a food ______ into the dining area.", A:"trolley", B:"counter", C:"platter", D:"tray", correct:"D"},
+      {q:"The men are shaking hands and having a ______.", A:"gallery", B:"conversation", C:"notice", D:"greeting", correct:"B"},
+      {q:"Some potted plants are placed beside the ______.", A:"walkway", B:"awning", C:"patio", D:"entryway", correct:"D"},
+      {q:"Several passengers are boarding a ______ bus.", A:"shuttle", B:"cargo", C:"hiking", D:"station", correct:"A"},
+      {q:"A shopper is loading groceries into a ______.", A:"bench", B:"backpack", C:"cart", D:"shelf", correct:"C"},
+      {q:"The man is pressing a button on the ______.", A:"counter", B:"monitor", C:"machine", D:"drawer", correct:"C"},
+      {q:"A bulletin board is covered with ______.", A:"luggage", B:"notices", C:"windows", D:"ladders", correct:"B"},
+      // 21–30
+      {q:"Some chairs are ______ neatly in the corner.", A:"stacked", B:"scattered", C:"spilled", D:"wiped", correct:"A"},
+      {q:"The woman is ______ a necktie in front of a mirror.", A:"attaching", B:"tying", C:"adjusting", D:"gripping", correct:"C"},
+      {q:"The tourists are walking across the ______ bridge.", A:"pedestrian", B:"wooden", C:"stone", D:"steel", correct:"A"},
+      {q:"Some water bottles are placed on a ______.", A:"frame", B:"shelf", C:"bin", D:"counter", correct:"D"},
+      {q:"The cook is chopping vegetables into small ______.", A:"racks", B:"piles", C:"pieces", D:"utensils", correct:"C"},
+      {q:"A ______ is lying beside the couch.", A:"cushion", B:"curtain", C:"shelf", D:"pole", correct:"A"},
+      {q:"A man is wiping down the outdoor ______.", A:"bench", B:"table", C:"carpet", D:"path", correct:"B"},
+      {q:"Several people are standing in the hotel ______.", A:"gallery", B:"lobby", C:"railing", D:"patio", correct:"B"},
+      {q:"Some tools are neatly laid out on the ______.", A:"rug", B:"tray", C:"workbench", D:"floor", correct:"C"},
+      {q:"A construction worker is carrying some ______.", A:"tree branches", B:"iron", C:"sheets of metal", D:"racks", correct:"C"},
+      // 31–40
+      {q:"The books are arranged on a wooden ______.", A:"pallet", B:"rack", C:"shelf", D:"bench", correct:"C"},
+      {q:"A man is ______ over to look into the drawer.", A:"leaning", B:"kneeling", C:"crouching", D:"laying", correct:"A"},
+      {q:"A sign is ______ on the wall near the entryway.", A:"posted", B:"propped", C:"piled", D:"packed", correct:"A"},
+      {q:"Some people are sitting under a ______ in the park.", A:"bench", B:"canopy", C:"bush", D:"awning", correct:"B"},
+      {q:"Several ______ are placed around the dining table.", A:"towels", B:"utensils", C:"cushions", D:"seats", correct:"D"},
+      {q:"A ______ of people is waiting at the bus stop.", A:"row", B:"line", C:"pile", D:"crowd", correct:"D"},
+      {q:"A man is carrying a ______ of water to the sink.", A:"pot", B:"tray", C:"bucket", D:"jar", correct:"C"},
+      {q:"Some ______ are hanging above the window.", A:"lights", B:"shutters", C:"ladders", D:"notices", correct:"A"},
+      {q:"The woman is adjusting her ______ while looking at the mirror.", A:"badge", B:"glasses", C:"glove", D:"shirt", correct:"B"},
+      {q:"Several wooden ______ are placed beside the campfire.", A:"benches", B:"stools", C:"pallets", D:"logs", correct:"D"},
+      // 41–50
+      {q:"A rug has been rolled up against the ______.", A:"door", B:"couch", C:"wall", D:"stairway", correct:"C"},
+      {q:"The nurse is preparing some medical ______.", A:"utensils", B:"trays", C:"equipment", D:"supplies", correct:"D"},
+      {q:"A bulletin board is located at the office ______.", A:"patio", B:"entryway", C:"gallery", D:"counter", correct:"B"},
+      {q:"The man is sitting at his office ______ working on the computer.", A:"desk", B:"counter", C:"shelf", D:"table", correct:"A"},
+      {q:"A woman is examining goods in a display ______.", A:"shelf", B:"rack", C:"case", D:"cupboard", correct:"C"},
+      {q:"The tourists are taking pictures near the city ______.", A:"fountain", B:"square", C:"park", D:"lobby", correct:"A"},
+      {q:"A ______ is leaning against the building wall.", A:"ladder", B:"log", C:"pole", D:"frame", correct:"A"},
+      {q:"Some groceries are scattered on the store ______.", A:"cart", B:"counter", C:"shelf", D:"floor", correct:"D"},
+      {q:"The cook is using a kitchen ______ to store plates.", A:"cupboard", B:"drawer", C:"rack", D:"closet", correct:"A"},
+      {q:"The man is carrying his ______ while boarding the escalator.", A:"backpack", B:"suitcase", C:"luggage", D:"all of the above", correct:"D"},
+    ];
+
+    // Chia khối hiển thị: 1–10, 11–20, 21–30, 31–40, 41–50
+    const GROUPS = [
+      {title: "Câu 1–10", start: 1, end: 10},
+      {title: "Câu 11–20", start: 11, end: 20},
+      {title: "Câu 21–30", start: 21, end: 30},
+      {title: "Câu 31–40", start: 31, end: 40},
+      {title: "Câu 41–50", start: 41, end: 50},
+    ];
+
+    // ====== AUTH & STORAGE ======
+    const LS_USERS_KEY = "quiz_users_v1"; // map username -> {password, history:[]}
+    const LS_CURRENT_KEY = "quiz_current_user_v1";
+
+    const $ = (q) => document.querySelector(q);
+    const $$ = (q) => document.querySelectorAll(q);
+
+    const authCard = $("#auth-card");
+    const topActions = $("#top-actions");
+    const avatarBadge = $("#avatar-badge");
+    const currentUsernameEl = $("#current-username");
+    const progressCard = $("#progress-card");
+    const quizForm = $("#quiz-form");
+    const questionsContainer = $("#questions-container");
+    const progressText = $("#progress-text");
+    const progressBar = $("#progress-bar");
+    const submitBtn = $("#submit-btn");
+    const resetBtn = $("#reset-btn");
+    const resultCard = $("#result-card");
+    const resultText = $("#result-text");
+    const mistakesWrap = $("#mistakes-wrap");
+    const mistakesList = $("#mistakes-list");
+    const historyCard = $("#history-card");
+    const historyEmpty = $("#history-empty");
+    const historyTableWrap = $("#history-table-wrap");
+    const historyTbody = $("#history-tbody");
+
+    const loginBtn = $("#login-btn");
+    const registerBtn = $("#register-btn");
+    const logoutBtn = $("#logout-btn");
+    const viewHistoryBtn = $("#view-history-btn");
+    const closeHistoryBtn = $("#close-history");
+
+    function getUsers() {
+      try {
+        return JSON.parse(localStorage.getItem(LS_USERS_KEY)) || {};
+      } catch {
+        return {};
+      }
+    }
+    function setUsers(users) {
+      localStorage.setItem(LS_USERS_KEY, JSON.stringify(users));
+    }
+    function getCurrentUser() {
+      return localStorage.getItem(LS_CURRENT_KEY);
+    }
+    function setCurrentUser(u) {
+      if (u) localStorage.setItem(LS_CURRENT_KEY, u);
+      else localStorage.removeItem(LS_CURRENT_KEY);
+    }
+
+    function showAppForUser(username) {
+      // Ẩn auth, hiện quiz & progress & top actions
+      authCard.classList.add("hidden");
+      topActions.classList.remove("hidden");
+      progressCard.classList.remove("hidden");
+      quizForm.classList.remove("hidden");
+      currentUsernameEl.textContent = username;
+      avatarBadge.textContent = (username[0] || "U").toUpperCase();
+      historyCard.classList.add("hidden"); // ensure hidden
+      // reset form (render + progress)
+      renderQuestions();
+      updateProgress();
+      resultCard.classList.add("hidden");
+    }
+    function showAuthOnly() {
+      authCard.classList.remove("hidden");
+      topActions.classList.add("hidden");
+      progressCard.classList.add("hidden");
+      quizForm.classList.add("hidden");
+      resultCard.classList.add("hidden");
+      historyCard.classList.add("hidden");
+    }
+
+    // ====== RENDER QUESTIONS ======
+    function createOptionHTML(qIndex, letter, text) {
+      const name = `q${qIndex}`;
+      return `
+        <label class="flex items-center">
+          <input type="radio" name="${name}" value="${letter}" class="hidden">
+          <span class="option-label cursor-pointer px-4 py-2 rounded-lg border border-gray-300 w-full">${letter}. ${text}</span>
+        </label>
+      `;
+    }
+
+    function renderGroupHTML(title, start, end) {
+      let inner = "";
+      for (let i = start; i <= end; i++) {
+        const idx = i - 1;
+        const q = RAW_QUESTIONS[idx];
+        inner += `
+          <div class="question-group">
+            <p class="font-medium text-gray-800 mb-2">${i}. ${q.q}</p>
+            <div class="space-y-2">
+              ${createOptionHTML(i, "A", q.A)}
+              ${createOptionHTML(i, "B", q.B)}
+              ${createOptionHTML(i, "C", q.C)}
+              ${createOptionHTML(i, "D", q.D)}
+            </div>
+          </div>
+        `;
+      }
+      return `
+        <div class="bg-white rounded-lg shadow-md p-6 question-card">
+          <h3 class="text-xl font-semibold text-blue-800 mb-4 border-b pb-2">${title}</h3>
+          <div class="space-y-4">${inner}</div>
+        </div>
+      `;
+    }
+
+    function renderQuestions() {
+      questionsContainer.innerHTML = GROUPS.map(g => renderGroupHTML(g.title, g.start, g.end)).join("");
+      // Bind change for progress
+      questionsContainer.addEventListener("change", updateProgress);
+    }
+
+    function getSelections() {
+      const answers = {};
+      for (let i = 1; i <= 50; i++) {
+        const sel = document.querySelector(`input[name="q${i}"]:checked`);
+        answers[i] = sel ? sel.value : null;
+      }
+      return answers;
+    }
+
+    function updateProgress() {
+      const selections = getSelections();
+      let count = 0;
+      for (let i = 1; i <= 50; i++) if (selections[i]) count++;
+      progressText.textContent = `${count}/50`;
+      const pct = Math.round((count/50) * 100);
+      progressBar.style.width = pct + "%";
+    }
+
+    // ====== SCORING ======
+    function scoreTest() {
+      const selections = getSelections();
+      let correct = 0;
+      const mistakes = [];
+      for (let i = 1; i <= 50; i++) {
+        const chosen = selections[i];
+        const key = RAW_QUESTIONS[i-1].correct;
+        if (chosen === key) correct++;
+        else mistakes.push({no:i, chosen: chosen || "—", correct:key});
+      }
+      return {correct, mistakes};
+    }
+
+    function formatDateTime(d) {
+      const pad = (n)=> String(n).padStart(2,"0");
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    }
+
+    function saveHistory(username, score) {
+      const users = getUsers();
+      if (!users[username]) return;
+      users[username].history = users[username].history || [];
+      users[username].history.unshift({
+        time: new Date().toISOString(),
+        score: score,
+        total: 50
+      });
+      setUsers(users);
+    }
+
+    function showResult({correct, mistakes}) {
+      const percent = Math.round((correct/50)*100);
+      resultText.innerHTML = `Bạn đúng <span class="font-semibold text-blue-700">${correct}/50</span> câu (${percent}%).`;
+      if (mistakes.length) {
+        mistakesWrap.classList.remove("hidden");
+        mistakesList.innerHTML = mistakes.map(m => {
+          return `<li>Câu ${m.no}: bạn chọn <strong>${m.chosen}</strong>, đúng là <strong>${m.correct}</strong>.</li>`;
+        }).join("");
+      } else {
+        mistakesWrap.classList.add("hidden");
+        mistakesList.innerHTML = "";
+      }
+      resultCard.classList.remove("hidden");
+      // Scroll tới kết quả
+      resultCard.scrollIntoView({behavior:"smooth", block:"start"});
+    }
+
+    function resetForm() {
+      // bỏ chọn tất cả
+      for (let i = 1; i <= 50; i++) {
+        const checked = document.querySelector(`input[name="q${i}"]:checked`);
+        if (checked) checked.checked = false;
+      }
+      updateProgress();
+      resultCard.classList.add("hidden");
+    }
+
+    // ====== HISTORY UI ======
+    function openHistory() {
+      const username = getCurrentUser();
+      if (!username) return;
+      const users = getUsers();
+      const hist = (users[username] && users[username].history) ? users[username].history : [];
+      if (!hist.length) {
+        historyEmpty.classList.remove("hidden");
+        historyTableWrap.classList.add("hidden");
+      } else {
+        historyEmpty.classList.add("hidden");
+        historyTableWrap.classList.remove("hidden");
+        historyTbody.innerHTML = hist.map((h, idx) => {
+          const d = new Date(h.time);
+          const when = isNaN(d.getTime()) ? h.time : formatDateTime(d);
+          const pct = Math.round((h.score / h.total) * 100);
+          return `
+            <tr>
+              <td class="px-3 py-2 text-sm">${idx + 1}</td>
+              <td class="px-3 py-2 text-sm">${when}</td>
+              <td class="px-3 py-2 text-sm">${h.score}/${h.total}</td>
+              <td class="px-3 py-2 text-sm">${pct}%</td>
+            </tr>
+          `;
+        }).join("");
+      }
+      historyCard.classList.remove("hidden");
+      historyCard.scrollIntoView({behavior:"smooth", block:"start"});
+    }
+
+    // ====== EVENTS ======
+    registerBtn.addEventListener("click", () => {
+      const u = $("#reg-username").value.trim();
+      const p = $("#reg-password").value;
+      const msg = $("#register-msg");
+      msg.textContent = "";
+      msg.className = "text-sm";
+      if (!u || !p) {
+        msg.textContent = "Vui lòng nhập đủ tên đăng nhập và mật khẩu.";
+        msg.classList.add("text-red-600");
+        return;
+      }
+      const users = getUsers();
+      if (users[u]) {
+        msg.textContent = "Tên đăng nhập đã tồn tại.";
+        msg.classList.add("text-red-600");
+        return;
+      }
+      users[u] = { password: p, history: [] };
+      setUsers(users);
+      msg.textContent = "Đăng ký thành công! Bạn có thể đăng nhập ngay.";
+      msg.classList.add("text-emerald-600");
+      $("#login-username").value = u;
+    });
+
+    loginBtn.addEventListener("click", () => {
+      const u = $("#login-username").value.trim();
+      const p = $("#login-password").value;
+      const msg = $("#login-msg");
+      msg.textContent = "";
+      if (!u || !p) {
+        msg.textContent = "Vui lòng nhập đủ tên đăng nhập và mật khẩu.";
+        return;
+      }
+      const users = getUsers();
+      if (!users[u] || users[u].password !== p) {
+        msg.textContent = "Sai tên đăng nhập hoặc mật khẩu.";
+        return;
+      }
+      setCurrentUser(u);
+      showAppForUser(u);
+    });
+
+    logoutBtn.addEventListener("click", () => {
+      setCurrentUser(null);
+      showAuthOnly();
+    });
+
+    viewHistoryBtn.addEventListener("click", openHistory);
+    closeHistoryBtn.addEventListener("click", () => historyCard.classList.add("hidden"));
+
+    submitBtn.addEventListener("click", () => {
+      const {correct, mistakes} = scoreTest();
+      const user = getCurrentUser();
+      if (user) saveHistory(user, correct);
+      showResult({correct, mistakes});
+    });
+
+    resetBtn.addEventListener("click", resetForm);
+
+    // ====== INIT ======
+    (function init() {
+      const user = getCurrentUser();
+      if (user) showAppForUser(user);
+      else showAuthOnly();
+    })();
+  </script>
+</body>
+</html>
